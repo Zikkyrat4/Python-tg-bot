@@ -1,0 +1,64 @@
+version: '3'
+services:
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile.bot
+    image: bot_image
+    env_file:
+      - .env
+    volumes:
+      - pg_logs:/var/log
+    container_name: bot_container
+    environment:
+      - TOKEN=${TOKEN}
+      - RM_HOST=${RM_HOST}
+      - RM_PORT=${RM_PORT}
+      - RM_USER=${RM_USER}
+      - RM_PASSWORD=${RM_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}.my_network
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+
+  db_master:
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - DB_REPL_USER=${DB_REPL_USER}
+      - DB_REPL_PASSWORD=${DB_REPL_PASSWORD}
+      - DB_REPL_HOST=${DB_REPL_HOST}.my_network
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+    build:
+      context: ./db
+      dockerfile: Dockerfile.db
+    image: db_image
+    container_name: "${DB_HOST}"
+    volumes:
+      - pg_logs:/var/log/
+
+  db_repl:
+    image: db_repl_image
+    container_name: "${DB_REPL_HOST}"
+    environment:
+      - DB_HOST=${DB_HOST}.my_network
+      - DB_PORT=${DB_PORT}
+      - DB_REPL_HOST=${DB_REPL_HOST}
+      - DB_REPL_PORT=${DB_REPL_PORT}
+      - DB_REPL_USER=${DB_REPL_USER}
+      - DB_REPL_PASSWORD=${DB_REPL_PASSWORD}
+    build:
+      context: ./db_repl
+      dockerfile: Dockerfile.db_repl
+    depends_on:
+      - db_master
+
+volumes:
+  pg_data:
+  pg_logs:
+networks:
+  default:
+    name: my_network
