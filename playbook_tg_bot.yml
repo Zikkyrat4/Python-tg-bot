@@ -1,0 +1,132 @@
+- name: Connect to host via SSH and execute playbook
+  hosts: db_master
+  become: yes
+  gather_facts: no
+  tasks:
+
+    - name: Install unzip package
+      apt:
+        name: unzip
+        state: present
+
+    - name: Download Docker Compose file from GitHub
+      get_url:
+        url: https://github.com/Zikkyrat4/bot/archive/docker.zip
+        dest: ~/docker-repo.zip
+
+    - name: Create docker-repo directory if it doesn't exist
+      file:
+        path: /root/docker-repo
+        state: directory
+
+    - name: Unzip the downloaded repository unarchive
+      unarchive:
+        src: ~/docker-repo.zip
+        dest: /root/docker-repo
+        remote_src: yes
+
+
+    - name: Install Docker and Docker Compose
+      block:
+        - name: Install dependencies
+          apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - software-properties-common
+
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+            state: present
+
+        - name: Install Docker
+          apt:
+            name: 
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+
+        - name: Download Docker Compose
+          get_url:
+            url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+            dest: /usr/local/bin/docker-compose
+            mode: 'a+x'
+
+    - name: Start db_master container
+      command: docker-compose up -d db_master bot
+      args:
+        chdir: /root/docker-repo/bot-docker/
+    
+
+- name: Connect to host via SSH and execute playbook
+  hosts: db_repl
+  become: yes
+  gather_facts: no
+  tasks:
+    - name: Install unzip package
+      apt:
+        name: unzip
+        state: present
+
+    - name: Download Docker Compose file from GitHub
+      get_url:
+        url: https://github.com/Zikkyrat4/bot/archive/docker.zip
+        dest: ~/docker-repo.zip
+
+    - name: Create docker-repo directory if it doesn't exist
+      file:
+        path: /root/docker-repo
+        state: directory
+
+    - name: Unzip the downloaded repository unarchive
+      unarchive:
+        src: ~/docker-repo.zip
+        dest: /root/docker-repo
+        remote_src: yes
+
+    - name: Install Docker and Docker Compose
+      block:
+        - name: Install dependencies
+          apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - software-properties-common
+
+        - name: Add Docker GPG key
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker repository
+          apt_repository:
+            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+            state: present
+
+        - name: Install Docker
+          apt:
+            name: 
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+
+        - name: Download Docker Compose
+          get_url:
+            url: https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+            dest: /usr/local/bin/docker-compose
+            mode: 'a+x'
+
+    - name: Start db_repl container
+      command: docker-compose up -d db_repl
+      args:
+        chdir: /root/docker-repo/bot-docker/
+
+    
